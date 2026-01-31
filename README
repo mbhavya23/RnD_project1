@@ -1,0 +1,12 @@
+Steps to run
+
+In terminal
+    cd backend 
+    npm install
+    npm start
+
+In another terminal
+    cd frontend
+    npm install
+    npm run dev
+Go to the link (http://localhost:5173/)
