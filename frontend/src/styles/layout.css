@@ -892,3 +892,167 @@ button:hover {
     #ffffff
   );
 }
+
+/* Markdown Output Styling */
+.output-markdown {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 24px;
+  font-size: 15px;
+  line-height: 1.7;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  color: #1f2937;
+}
+
+.output-markdown h1 {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a4e8a;
+  margin-top: 24px;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+.output-markdown h2 {
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a4e8a;
+  margin-top: 20px;
+  margin-bottom: 12px;
+}
+
+.output-markdown h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin-top: 16px;
+  margin-bottom: 10px;
+}
+
+.output-markdown h4,
+.output-markdown h5,
+.output-markdown h6 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-top: 14px;
+  margin-bottom: 8px;
+}
+
+.output-markdown p {
+  margin-bottom: 12px;
+  color: #374151;
+}
+
+.output-markdown ul,
+.output-markdown ol {
+  margin-bottom: 16px;
+  padding-left: 28px;
+  color: #374151;
+}
+
+.output-markdown li {
+  margin-bottom: 6px;
+  line-height: 1.6;
+}
+
+.output-markdown strong {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.output-markdown em {
+  font-style: italic;
+  color: #4b5563;
+}
+
+.output-markdown code {
+  background: #f3f4f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  color: #dc2626;
+}
+
+.output-markdown pre {
+  background: #1f2937;
+  color: #f9fafb;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.output-markdown pre code {
+  background: transparent;
+  color: #f9fafb;
+  padding: 0;
+}
+
+.output-markdown blockquote {
+  border-left: 4px solid #f97316;
+  padding-left: 16px;
+  margin: 16px 0;
+  color: #6b7280;
+  font-style: italic;
+}
+
+.output-markdown a {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+.output-markdown a:hover {
+  color: #1d4ed8;
+}
+
+.output-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 16px;
+}
+
+.output-markdown th,
+.output-markdown td {
+  border: 1px solid #e5e7eb;
+  padding: 10px 12px;
+  text-align: left;
+}
+
+.output-markdown th {
+  background: #f9fafb;
+  font-weight: 600;
+  color: #1a4e8a;
+}
+
+.output-markdown hr {
+  border: none;
+  border-top: 2px solid #e5e7eb;
+  margin: 24px 0;
+}
+
+/* Streaming indicator */
+.streaming-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #059669;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.5;
+    transform: scale(1.2);
+  }
+}

@@ -1,12 +1,13 @@
 import Navbar from "../components/Navbar";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
   const logout = async () => {
-    await fetch("http://localhost:5000/auth/logout", {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include"
     });
@@ -29,22 +30,23 @@ export default function Dashboard() {
 
         <div className="dashboard-grid">
           <Feature
-            title="Generate"
+            title="Generate Script"
             description="Create content using categories or your own prompt"
             icon="📝"
             link="/generate/options"
           />
-          <Feature
+          {/* <Feature
             title="Translate"
             description="Translate text into Indian languages"
             icon="🌐"
             link="/translate"
-          />
+          /> */}
           <Feature
-            title="Get Audio"
+            title="Generate Audio"
             description="Convert text into audio"
             icon="🔊"
-            link="/audio"
+            link="https://lorette-trispermous-chrissy.ngrok-free.dev/"
+            external
           />
         </div>
       </div>
@@ -52,14 +54,23 @@ export default function Dashboard() {
   );
 }
 
-function Feature({ title, description, icon, link }) {
+function Feature({ title, description, icon, link, external = false }) {
   const navigate = useNavigate();
+
+  const handleClick = () => {
+    if (external) {
+      window.location.href = link; // same tab
+      // window.open(link, "_blank"); // new tab (optional)
+    } else {
+      navigate(link);
+    }
+  };
 
   return (
     <div
       className="card feature-card"
       style={{ cursor: "pointer" }}
-      onClick={() => navigate(link)}
+      onClick={handleClick}
     >
       <span className="feature-icon">{icon}</span>
       <h3>{title}</h3>

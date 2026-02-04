@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
+import { API_BASE_URL } from "../config";
+import Dashboard from "../pages/Dashboard";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ export default function Navbar() {
 
   /* Fetch logged-in user */
   useEffect(() => {
-    fetch("http://localhost:5000/auth/me", {
+    fetch(`${API_BASE_URL}/auth/me`, {
       credentials: "include",
     })
       .then((res) => res.json())
@@ -55,7 +57,7 @@ export default function Navbar() {
 
   /* Logout */
   const logout = async () => {
-    await fetch("http://localhost:5000/auth/logout", {
+    await fetch(`${API_BASE_URL}/auth/logout`, {
       method: "POST",
       credentials: "include",
     });
@@ -93,7 +95,7 @@ export default function Navbar() {
           <button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(-1);
+              navigate("/dashboard");
             }}
             style={{
               fontSize: 18,
@@ -142,7 +144,7 @@ export default function Navbar() {
       {/* RIGHT SECTION */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         {/* MODULES MENU */}
-       {!isDashboard && (
+       {/* {!isDashboard && (
         <div ref={modulesRef} style={{ position: "relative" }}>
           <div
             onClick={() => setModulesOpen(!modulesOpen)}
@@ -207,7 +209,7 @@ export default function Navbar() {
             </div>
           )}
         </div>
-       )}
+       )} */}
 
         {/* USER MENU */}
         <div ref={userDropdownRef} style={{ position: "relative" }}>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config";
 import "../styles/theme.css";
 import "../styles/layout.css";
 
@@ -12,7 +13,7 @@ export default function Login() {
     if (!email || !password) return;
 
     try {
-      const res = await fetch("http://localhost:5000/auth/login", {
+      const res = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

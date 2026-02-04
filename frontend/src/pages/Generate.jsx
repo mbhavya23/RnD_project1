@@ -4,10 +4,14 @@ import "../styles/layout.css";
 import { useSearchParams } from "react-router-dom";
 import { useAppContext } from "../context/AppContext";
 import { useLocation } from "react-router-dom";
+import { API_BASE_URL } from "../config";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 export default function Generate() {
-  const [prompt, setPrompt] = useState("");
-  // const [files, setFiles] = useState([]); // multiple files
+  const [systemPrompt, setSystemPrompt] = useState("");
+  const [userPrompt, setUserPrompt] = useState("");
+  const [files, setFiles] = useState([]);
   const [output, setOutput] = useState("");
   const [loading, setLoading] = useState(false);
   const [searchParams] = useSearchParams();
@@ -22,15 +26,15 @@ export default function Generate() {
   // }, [category]);
   useEffect(() => {
     if (location.state?.prefilledPrompt) {
-      setPrompt(location.state.prefilledPrompt);
+      setUserPrompt(location.state.prefilledPrompt);
       setTranslatedText(""); // reset old translation (important)
     }
   }, [location.state, setTranslatedText]);
 
 
   const handleGenerate = async () => {
-    if (!prompt.trim()) {
-      alert("Please enter a prompt");
+    if (!userPrompt.trim()) {
+      alert("Please enter a user prompt");
       return;
     }
 
@@ -38,44 +42,116 @@ export default function Generate() {
     setOutput("");
 
     try {
-      // const formData = new FormData();
-      // formData.append("prompt", prompt);
-      // files.forEach((file) => {
-      //   formData.append("documents", file);
-      // });
+      const formData = new FormData();
+      formData.append("userPrompt", userPrompt);
+      if (systemPrompt.trim()) {
+        formData.append("systemPrompt", systemPrompt);
+      }
+      files.forEach((file) => {
+        formData.append("files", file);
+      });
 
-      const res = await fetch("http://localhost:5000/generate", {
+      const res = await fetch(`${API_BASE_URL}/generate`, {
         method: "POST",
         credentials: "include",
-        headers: {
-        "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-    });
+        body: formData,
+      });
 
-    const data = await res.json();
+      if (!res.ok) {
+        const data = await res.json();
+        alert(data?.error || `Request failed (${res.status})`);
+        setLoading(false);
+        return;
+      }
 
-    if (res.ok) {
-      setOutput(data.output);
-      setGenerateText(data.output);
-    } else {
-      alert(data?.error || `Request failed (${res.status})`);
+      // Handle SSE streaming
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedOutput = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) {
+          break;
+        }
+
+        // Decode the chunk
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+
+            if (data === '[DONE]') {
+              setGenerateText(accumulatedOutput);
+              setLoading(false);
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+
+              if (parsed.content) {
+                accumulatedOutput += parsed.content;
+                setOutput(accumulatedOutput);
+              }
+
+              if (parsed.error) {
+                alert(parsed.error);
+                setLoading(false);
+                return;
+              }
+            } catch (e) {
+              console.error('Error parsing SSE data:', e);
+            }
+          }
+        }
+      }
+
+      setGenerateText(accumulatedOutput);
+    } catch (err) {
+      console.error("Generation error:", err);
+      alert("Server error");
+    } finally {
+      setLoading(false);
     }
-  } catch (err) {
-    alert("Server error");
-  } finally {
-    setLoading(false);
-  }
   };
 
-  // const handleFileUpload = (event) => {
-  //   const newFiles = Array.from(event.target.files);
-  //   setFiles((prev) => [...prev, ...newFiles]);
-  // };
+  const handleFileUpload = (event) => {
+    const newFiles = Array.from(event.target.files);
 
-  // const removeFile = (index) => {
-  //   setFiles((prev) => prev.filter((_, i) => i !== index));
-  // };
+    // Validate file types
+    const allowedTypes = [
+      'text/plain',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/csv',
+      'text/markdown',
+      'application/json'
+    ];
+
+    const allowedExtensions = ['.txt', '.pdf', '.doc', '.docx', '.csv', '.md', '.json'];
+
+    const validFiles = newFiles.filter(file => {
+      const isValidType = allowedTypes.includes(file.type);
+      const hasValidExtension = allowedExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+
+      if (!isValidType && !hasValidExtension) {
+        alert(`File "${file.name}" is not allowed. Only text, PDF, and document files are accepted.`);
+        return false;
+      }
+      return true;
+    });
+
+    setFiles((prev) => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index) => {
+    setFiles((prev) => prev.filter((_, i) => i !== index));
+  };
 
   return (
     <>
@@ -86,17 +162,110 @@ export default function Generate() {
           
           {/* LEFT PANEL (1/3) */}
           <div className="generate-left">
-            <h3 style={{ marginBottom: 12 }}>
-              {category ? "Enter Prompt" : "Enter Prompt"}
-            </h3>
+            <h3 style={{ marginBottom: 12 }}>System Prompt (Optional)</h3>
 
             <textarea
               className="prompt-textarea"
-              rows={12}
-              placeholder="Describe what you want to generate..."
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              rows={5}
+              placeholder="Enter system instructions (optional)..."
+              value={systemPrompt}
+              onChange={(e) => setSystemPrompt(e.target.value)}
+              style={{ marginBottom: 16 }}
             />
+
+            <h3 style={{ marginBottom: 12 }}>User Prompt</h3>
+
+            <textarea
+              className="prompt-textarea"
+              rows={8}
+              placeholder="Describe what you want to generate...&#10;&#10;Tip: Use {file_1}, {file_2}, etc. to reference uploaded files"
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+            />
+            {files.length > 0 && (
+              <div style={{
+                fontSize: '12px',
+                color: '#374151',
+                marginTop: 8,
+                padding: '8px 12px',
+                background: '#f9fafb',
+                borderRadius: '6px',
+                border: '1px solid #e5e7eb'
+              }}>
+                <div style={{ fontWeight: '600', marginBottom: 4 }}>💡 Available placeholders:</div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                  {files.map((_, index) => (
+                    <code key={index} style={{
+                      background: '#ffffff',
+                      padding: '3px 6px',
+                      borderRadius: '4px',
+                      color: '#dc2626',
+                      fontSize: '11px',
+                      border: '1px solid #e5e7eb'
+                    }}>
+                      {`{file_${index + 1}}`}
+                    </code>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <h3 style={{ marginBottom: 12 }}>Upload Files (Optional)</h3>
+              <input
+                type="file"
+                multiple
+                accept=".txt,.pdf,.doc,.docx,.csv,.md,.json,text/plain,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                onChange={handleFileUpload}
+                style={{ marginBottom: 8 }}
+              />
+              <p style={{ fontSize: '12px', color: '#666', marginTop: 4 }}>
+                Allowed: Text (.txt), PDF (.pdf), Word (.doc, .docx), CSV (.csv), Markdown (.md), JSON (.json)
+              </p>
+              {files.length > 0 && (
+                <div style={{ marginTop: 8 }}>
+                  <strong>Selected files:</strong>
+                  <ul style={{ marginTop: 4, paddingLeft: 20 }}>
+                    {files.map((file, index) => (
+                      <li key={index} style={{ marginBottom: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <code style={{
+                            background: '#f3f4f6',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            color: '#dc2626',
+                            fontSize: '12px',
+                            fontWeight: '600'
+                          }}>
+                            {`{file_${index + 1}}`}
+                          </code>
+                          <span style={{ color: '#6b7280' }}>→</span>
+                          <span style={{ fontWeight: '500' }}>{file.name}</span>
+                          <span style={{ color: '#6b7280', fontSize: '11px' }}>
+                            ({(file.size / 1024).toFixed(2)} KB)
+                          </span>
+                          <button
+                            onClick={() => removeFile(index)}
+                            style={{
+                              marginLeft: 'auto',
+                              padding: "4px 10px",
+                              fontSize: "11px",
+                              cursor: "pointer",
+                              background: '#fee2e2',
+                              color: '#dc2626',
+                              border: '1px solid #fecaca',
+                              borderRadius: '4px'
+                            }}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
 
             <button
               className="button"
@@ -112,9 +281,23 @@ export default function Generate() {
           <div className="generate-right">
             <div className="panel-header">
               <h3>Generated Output</h3>
+              {loading && (
+                <div style={{
+                  fontSize: '13px',
+                  color: '#059669',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px'
+                }}>
+                  <span className="streaming-dot"></span>
+                  Streaming...
+                </div>
+              )}
             </div>
             {output ? (
-              <pre className="output-pre">{output}</pre>
+              <div className="output-markdown">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>{output}</ReactMarkdown>
+              </div>
             ) : (
               <div className="output-placeholder">
                 Generated text will appear here

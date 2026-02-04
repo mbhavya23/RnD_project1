@@ -10,11 +10,6 @@ lerna-debug.log*
 # Dependencies
 node_modules
 
-# Build outputs
-dist
-dist-ssr
-*.local
-
 # Environment variables
 .env
 .env.local
@@ -33,3 +28,7 @@ dist-ssr
 
 # OS files
 Thumbs.db
+
+# Uploads (if you store uploaded files locally)
+uploads/
+tmp/
